@@ -20,7 +20,10 @@ export const buildExpressErrorHandler = logger => (err, _req, res, _next) => {
   const appError =
     err instanceof AppError
       ? err
-      : new AppError(err.message || 'Internal Server Error', err.statusCode || 500);
+      : new AppError(
+          err.message || 'Internal Server Error',
+          err.statusCode || 500
+        );
 
   if (!appError.isOperational && logger) {
     logger.error(err);
