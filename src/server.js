@@ -1,7 +1,20 @@
+import http from 'http';
 import app from './app.js';
+import { initWebSocket } from './socket/index.js';
 
 const PORT = process.env.PORT || 8000;
+const HOST = process.env.HOST || '0.0.0.0';
 
-app.listen(PORT, () =>
-  console.log(`server running on http://localhost:${PORT}`)
-);
+const server = http.createServer(app);
+
+// Initialize WebSocket
+initWebSocket(server);
+
+server.listen(PORT, HOST, () => {
+  const baseUrl =
+    HOST === '0.0.0.0' ? `http://localhost:${PORT}` : `http://${HOST}:${PORT}`;
+  console.log(`server running on ${baseUrl}`);
+  console.log(
+    `Websocket server is running on ${baseUrl.replace('http', 'ws')}/ws`
+  );
+});
