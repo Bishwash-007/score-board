@@ -1,14 +1,10 @@
 import { Router } from 'express';
+import { createMatch, getMatches } from '../controllers/matches.js';
 
 const router = Router();
 
-router.get('/', (_, res) => {
-  res.status(200).json({
-    matches: [
-      { id: 1, teamA: 'Team Alpha', teamB: 'Team Beta', scoreA: 2, scoreB: 1 },
-      { id: 2, teamA: 'Team Gamma', teamB: 'Team Delta', scoreA: 0, scoreB: 0 },
-    ],
-  });
-});
+router.get('/', getMatches);
+
+router.post('/', createMatch);
 
 export default router;
