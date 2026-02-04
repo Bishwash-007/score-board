@@ -1,3 +1,4 @@
+import { desc } from 'drizzle-orm';
 import { db } from '../config/database.js';
 import { matches } from '../db/schema.js';
 import {
@@ -47,7 +48,7 @@ export const getMatches = async (req, res) => {
     const allMatches = await db
       .select()
       .from(matches)
-      .orderBy(matches.startTime.desc())
+      .orderBy(desc(matches.startTime))
       .limit(limit);
 
     return res.status(200).json({
