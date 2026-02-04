@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const MatchStatusSchema = z.enum(['scheduled', 'live', 'finished']);
 
-const isoDateString = z.string().datetime({
-  message: 'Must be a valid ISO 8601 date string',
+const isoDateString = z.iso.datetime({
+  message: 'Invalid ISO 8601 date string',
 });
 
 const positiveIntId = z.coerce.number().int().positive();
