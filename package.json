@@ -5,20 +5,37 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "lint:fix": "eslint . --fix",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/node": "^25.2.0",
-    "@types/ws": "^8.18.1"
+    "@types/ws": "^8.18.1",
+    "drizzle-kit": "^0.31.8",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "prettier": "^3.8.1"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "body-parser": "^2.2.2",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
+    "helmet": "^8.1.0",
     "morgan": "^1.10.1",
     "winston": "^3.19.0"
   }
