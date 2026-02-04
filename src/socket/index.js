@@ -1,9 +1,14 @@
 import { WebSocketServer } from 'ws';
-import { sendJSON } from './utils.js';
+import { broadcastJSON, sendJSON } from './utils.js';
 import logger from '../config/logger.js';
 
+const state = {
+  wss: null,
+};
+
 export const initWebSocket = server => {
-  const wss = new WebSocketServer({ server });
+  state.wss = new WebSocketServer({ server, path: '/ws' });
+  const { wss } = state;
 
   wss.on('connection', (ws, req) => {
     const ip = req.socket.remoteAddress;
@@ -14,6 +19,12 @@ export const initWebSocket = server => {
       type: 'connection',
       status: 'connected',
       message: 'Welcome to Sports Stats Live Feed',
+    });
+
+    // Broadcast to all clients that a new user joined
+    broadcastJSON(wss, {
+      type: 'notification',
+      message: `A new client has connected from ${ip}`,
     });
 
     ws.on('message', message => {
@@ -32,6 +43,10 @@ export const initWebSocket = server => {
 
     ws.on('close', () => {
       logger.info(`WebSocket connection closed: ${ip}`);
+      broadcastJSON(wss, {
+        type: 'notification',
+        message: `A client has disconnected from ${ip}`,
+      });
     });
 
     ws.on('error', error => {
@@ -40,4 +55,20 @@ export const initWebSocket = server => {
   });
 
   return wss;
+};
+
+export const getWss = () => {
+  if (!state.wss) {
+    throw new Error('WebSocket Server not initialized!');
+  }
+  return state.wss;
+};
+
+export const broadcastMatchUpdate = (matchId, data) => {
+  if (!state.wss) return;
+  broadcastJSON(state.wss, {
+    type: 'MATCH_UPDATE',
+    matchId,
+    data,
+  });
 };
