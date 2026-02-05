@@ -1,11 +1,10 @@
-import { desc } from 'drizzle-orm';
-import { db } from '../config/database.js';
-import { matches } from '../db/schema.js';
 import {
   createMatchSchema,
   listMatchesQuerySchema,
 } from '../validations/matches.js';
 import { AppError } from '../utils/error.js';
+import { createMatchEntry, getRecentMatches } from '../services/matches.js';
+
 
 export const createMatch = async (req, res) => {
   const parsed = createMatchSchema.safeParse(req.body);
@@ -17,14 +16,11 @@ export const createMatch = async (req, res) => {
   const { startTime, endTime, ...rest } = parsed.data;
 
   try {
-    const [event] = await db
-      .insert(matches)
-      .values({
-        ...rest,
-        startTime: new Date(startTime),
-        endTime: endTime ? new Date(endTime) : null,
-      })
-      .returning();
+    const event = await createMatchEntry({
+      ...rest,
+      startTime: new Date(startTime),
+      endTime: endTime ? new Date(endTime) : null,
+    });
 
     if (res.app.locals.broadcastMatchCreated) {
       res.app.locals.broadcastMatchCreated(event);
@@ -49,11 +45,7 @@ export const getMatches = async (req, res) => {
   const { limit } = parsed.data;
 
   try {
-    const allMatches = await db
-      .select()
-      .from(matches)
-      .orderBy(desc(matches.startTime))
-      .limit(limit);
+    const allMatches = await getRecentMatches(limit);
 
     return res.status(200).json({
       status: 'success',
