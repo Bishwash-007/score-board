@@ -7,11 +7,13 @@ import logger from './config/logger.js';
 import { buildExpressErrorHandler } from './utils/error.js';
 
 import routes from './routes/index.js';
+import { securityMiddleware } from './config/arcjet.js';
 
 // initialize an express app
 const app = express();
 
 // middlewares
+app.use(securityMiddleware);
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
