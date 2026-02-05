@@ -1,74 +1,57 @@
-import { WebSocketServer } from 'ws';
-import { broadcastJSON, sendJSON } from './utils.js';
-import logger from '../config/logger.js';
+import { WebSocket, WebSocketServer } from 'ws';
 
-const state = {
-  wss: null,
-};
+function sendJson(socket, payload) {
+  if (socket.readyState !== WebSocket.OPEN) return;
 
-export const initWebSocket = server => {
-  state.wss = new WebSocketServer({ server, path: '/ws' });
-  const { wss } = state;
+  socket.send(JSON.stringify(payload));
+}
 
-  wss.on('connection', (ws, req) => {
-    const ip = req.socket.remoteAddress;
-    logger.info(`New WebSocket connection from ${ip}`);
+function broadcastToAll(wss, payload) {
+  for (const client of wss.clients) {
+    if (client.readyState !== WebSocket.OPEN) continue;
 
-    // Send initial connection success message
-    sendJSON(ws, {
-      type: 'connection',
-      status: 'connected',
-      message: 'Welcome to Sports Stats Live Feed',
-    });
-
-    // Broadcast to all clients that a new user joined
-    broadcastJSON(wss, {
-      type: 'notification',
-      message: `A new client has connected from ${ip}`,
-    });
-
-    ws.on('message', message => {
-      try {
-        const parsed = JSON.parse(message);
-        logger.info(`Received message: ${JSON.stringify(parsed)}`);
-
-        // Handle ping/pong or other control messages if needed
-        if (parsed.type === 'ping') {
-          sendJSON(ws, { type: 'pong' });
-        }
-      } catch (error) {
-        logger.error(`WebSocket message error: ${error.message}`);
-      }
-    });
-
-    ws.on('close', () => {
-      logger.info(`WebSocket connection closed: ${ip}`);
-      broadcastJSON(wss, {
-        type: 'notification',
-        message: `A client has disconnected from ${ip}`,
-      });
-    });
-
-    ws.on('error', error => {
-      logger.error(`WebSocket error: ${error.message}`);
-    });
-  });
-
-  return wss;
-};
-
-export const getWss = () => {
-  if (!state.wss) {
-    throw new Error('WebSocket Server not initialized!');
+    client.send(JSON.stringify(payload));
   }
-  return state.wss;
-};
+}
 
-export const broadcastMatchUpdate = (matchId, data) => {
-  if (!state.wss) return;
-  broadcastJSON(state.wss, {
-    type: 'MATCH_UPDATE',
-    matchId,
-    data,
+export function attachWebSocketServer(server) {
+  const wss = new WebSocketServer({
+    server,
+    path: '/ws',
+    maxPayload: 1024 * 1024,
   });
-};
+
+  wss.on('connection', async (socket, _) => {
+    socket.isAlive = true;
+    socket.on('pong', () => {
+      socket.isAlive = true;
+    });
+
+    socket.subscriptions = new Set();
+
+    sendJson(socket, { type: 'welcome' });
+
+    socket.on('error', () => {
+      socket.terminate();
+    });
+
+    socket.on('error', console.error);
+  });
+
+  const interval = setInterval(() => {
+    wss.clients.forEach(ws => {
+      if (ws.isAlive === false) return ws.terminate();
+
+      ws.isAlive = false;
+      ws.ping();
+    });
+  }, 30000);
+
+  wss.on('close', () => clearInterval(interval));
+
+  function broadcastMatchCreated(match) {
+    broadcastToAll(wss, { type: 'match_created', data: match });
+  }
+
+  return { broadcastMatchCreated };
+}
