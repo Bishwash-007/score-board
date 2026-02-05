@@ -5,7 +5,6 @@ import {
 import { AppError } from '../utils/error.js';
 import { createMatchEntry, getRecentMatches } from '../services/matches.js';
 
-
 export const createMatch = async (req, res) => {
   const parsed = createMatchSchema.safeParse(req.body);
 

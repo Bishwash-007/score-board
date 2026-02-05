@@ -1,7 +1,7 @@
 import { AppError } from '../utils/error.js';
 import {
   createCommentarySchema,
-//   listCommentaryQuerySchema,
+  //   listCommentaryQuerySchema,
 } from '../validations/commentary.js';
 import { matchIdParamSchema } from '../validations/matches.js';
 import * as commentaryService from '../services/commentary.js';
