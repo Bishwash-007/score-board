@@ -17,7 +17,7 @@ export const createMatch = async (req, res) => {
   const { startTime, endTime, ...rest } = parsed.data;
 
   try {
-    const [match] = await db
+    const [event] = await db
       .insert(matches)
       .values({
         ...rest,
@@ -26,9 +26,13 @@ export const createMatch = async (req, res) => {
       })
       .returning();
 
+    if (res.app.locals.broadcastMatchCreated) {
+      res.app.locals.broadcastMatchCreated(event);
+    }
+
     return res.status(201).json({
       status: 'success',
-      data: { match },
+      data: { event },
     });
   } catch (error) {
     throw new AppError('Failed to create match', 500, error.message);

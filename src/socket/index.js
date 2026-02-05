@@ -1,43 +1,57 @@
-import { WebSocketServer } from 'ws';
-import { sendJSON } from './utils.js';
-import logger from '../config/logger.js';
+import { WebSocket, WebSocketServer } from 'ws';
 
-export const initWebSocket = server => {
-  const wss = new WebSocketServer({ server });
+function sendJson(socket, payload) {
+  if (socket.readyState !== WebSocket.OPEN) return;
 
-  wss.on('connection', (ws, req) => {
-    const ip = req.socket.remoteAddress;
-    logger.info(`New WebSocket connection from ${ip}`);
+  socket.send(JSON.stringify(payload));
+}
 
-    // Send initial connection success message
-    sendJSON(ws, {
-      type: 'connection',
-      status: 'connected',
-      message: 'Welcome to Sports Stats Live Feed',
-    });
+function broadcastToAll(wss, payload) {
+  for (const client of wss.clients) {
+    if (client.readyState !== WebSocket.OPEN) continue;
 
-    ws.on('message', message => {
-      try {
-        const parsed = JSON.parse(message);
-        logger.info(`Received message: ${JSON.stringify(parsed)}`);
+    client.send(JSON.stringify(payload));
+  }
+}
 
-        // Handle ping/pong or other control messages if needed
-        if (parsed.type === 'ping') {
-          sendJSON(ws, { type: 'pong' });
-        }
-      } catch (error) {
-        logger.error(`WebSocket message error: ${error.message}`);
-      }
-    });
-
-    ws.on('close', () => {
-      logger.info(`WebSocket connection closed: ${ip}`);
-    });
-
-    ws.on('error', error => {
-      logger.error(`WebSocket error: ${error.message}`);
-    });
+export function attachWebSocketServer(server) {
+  const wss = new WebSocketServer({
+    server,
+    path: '/ws',
+    maxPayload: 1024 * 1024,
   });
 
-  return wss;
-};
+  wss.on('connection', async (socket, _) => {
+    socket.isAlive = true;
+    socket.on('pong', () => {
+      socket.isAlive = true;
+    });
+
+    socket.subscriptions = new Set();
+
+    sendJson(socket, { type: 'welcome' });
+
+    socket.on('error', () => {
+      socket.terminate();
+    });
+
+    socket.on('error', console.error);
+  });
+
+  const interval = setInterval(() => {
+    wss.clients.forEach(ws => {
+      if (ws.isAlive === false) return ws.terminate();
+
+      ws.isAlive = false;
+      ws.ping();
+    });
+  }, 30000);
+
+  wss.on('close', () => clearInterval(interval));
+
+  function broadcastMatchCreated(match) {
+    broadcastToAll(wss, { type: 'match_created', data: match });
+  }
+
+  return { broadcastMatchCreated };
+}
