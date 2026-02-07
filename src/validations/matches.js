@@ -56,6 +56,34 @@ export const createMatchSchema = z
     }
   );
 
+export const updateMatchSchema = z
+  .object({
+    sport: z.string().trim().min(1).max(255).optional(),
+    homeTeam: z.string().trim().min(1).max(255).optional(),
+    awayTeam: z.string().trim().min(1).max(255).optional(),
+    status: MatchStatusSchema.optional(),
+    startTime: isoDateString.optional(),
+    endTime: isoDateString.optional(),
+    homeScore: z.number().int().nonnegative().optional(),
+    awayScore: z.number().int().nonnegative().optional(),
+  })
+  .refine(
+    data => {
+      // If both are provided, check relation
+      // Note: If one is provided and other is in DB, this validation won't know the DB value.
+      // Ideally validation happens after merging with DB data or we trust the API user passes consistent data.
+      // For partial updates, we'll just check if both are present in the payload.
+      if (data.endTime && data.startTime) {
+        return new Date(data.endTime) > new Date(data.startTime);
+      }
+      return true;
+    },
+    {
+      message: 'endTime must be after startTime',
+      path: ['endTime'],
+    }
+  );
+
 export const updateScoreSchema = z.object({
   homeScore: z.coerce.number().int().nonnegative(),
   awayScore: z.coerce.number().int().nonnegative(),

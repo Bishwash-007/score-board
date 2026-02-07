@@ -8,10 +8,10 @@ const HOST = process.env.HOST || '0.0.0.0';
 const server = http.createServer(app);
 
 // Initialize WebSocket
-const { broadcastMatchCreated, broadcastCommentaryCreated } =
+const { broadcastMatchCreated, broadcastCommentary } =
   attachWebSocketServer(server);
 app.locals.broadcastMatchCreated = broadcastMatchCreated;
-app.locals.broadcastCommentaryCreated = broadcastCommentaryCreated;
+app.locals.broadcastCommentary = broadcastCommentary;
 
 server.listen(PORT, HOST, () => {
   const baseUrl =
