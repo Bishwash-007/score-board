@@ -49,7 +49,16 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/**', 'coverage/**', 'logs/**', 'drizzle/**'],
+    ignores: [
+      'node_modules/**',
+      'coverage/**',
+      'logs/**',
+      'drizzle/**',
+      'dist/**',
+      '.env',
+      '.env.local',
+      '.env.example',
+    ],
   },
   prettierConfig,
 ];
