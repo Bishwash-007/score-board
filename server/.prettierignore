@@ -4,3 +4,7 @@ logs/
 drizzle/
 *.log
 package-lock.json
+
+.env
+.env.local
+.env.example
