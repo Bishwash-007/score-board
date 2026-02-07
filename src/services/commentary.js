@@ -1,16 +1,27 @@
-import { eq, asc } from 'drizzle-orm';
 import { db } from '../config/database.js';
 import { commentary } from '../db/schema.js';
+import { desc, eq } from 'drizzle-orm';
 
-export const getCommentaryByMatchId = async matchId => {
+export const getCommentaries = async (matchId, limit) => {
+  const safeLimit = Math.min(limit, 100);
+
   return await db
     .select()
     .from(commentary)
     .where(eq(commentary.matchId, matchId))
-    .orderBy(asc(commentary.minute));
+    .orderBy(desc(commentary.createdAt))
+    .limit(safeLimit);
 };
 
-export const createCommentaryEntry = async data => {
-  const [result] = await db.insert(commentary).values(data).returning();
+export const createCommentary = async (matchId, data) => {
+  const { minute, ...rest } = data;
+  const [result] = await db
+    .insert(commentary)
+    .values({
+      matchId,
+      minute,
+      ...rest,
+    })
+    .returning();
   return result;
 };
