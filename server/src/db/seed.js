@@ -12,7 +12,7 @@ const seed = async () => {
 
     // Create Matches
     console.log('Creating matches...');
-    
+
     // 1. Live Football Match
     const [liveMatch] = await db
       .insert(matches)
